@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_HUB_ENABLE_REMOTE_CODE: "1"  # Allow running custom model code
 
     steps:
       - name: Checkout repo
@@ -31,11 +32,10 @@ jobs:
           mkdir -p reports
 
           python3 -m garak \
-            --target_type huggingface.InferenceAPI \
-            --target_name Qwen/Qwen3-0.6B \
-            --probes dan \
-            --generations 1 -v \
-            --trust_remote_code True
+            --model_type huggingface \
+            --model_name Qwen/Qwen3-0.6B \
+            --probes dan,promptinject,malwaregen,codeinjection \
+            --generations 1 -v
 
           LATEST_REPORT=$(ls -t $HOME/.local/share/garak/garak_runs/*.report.jsonl | head -n 1)
 
