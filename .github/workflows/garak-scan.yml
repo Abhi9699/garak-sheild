@@ -26,18 +26,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install jinja2 plotly garak
 
-      - name: Run Garak LLM Scan with Quwen
+      - name: Run Garak LLM Scan with Qwen3-0.6B
         run: |
+          mkdir -p reports
+
           python3 -m garak \
-            --model_type huggingface \
-            --model_name qwen/qwen-7b \
+            --target_type huggingface.InferenceAPI \
+            --target_name Qwen/Qwen3-0.6B \
             --probes dan \
-            --generations 1 -v
+            --generations 1 -v \
+            --trust_remote_code True
 
           LATEST_REPORT=$(ls -t $HOME/.local/share/garak/garak_runs/*.report.jsonl | head -n 1)
 
           if [ -f "$LATEST_REPORT" ]; then
-            mkdir -p reports
             cp "$LATEST_REPORT" reports/latest_scan.jsonl
             echo "Garak report copied to reports/latest_scan.jsonl"
           else
