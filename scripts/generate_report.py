@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import pathlib
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import plotly.graph_objects as go
 
@@ -19,11 +20,15 @@ def summarize_vulnerabilities(vulnerabilities):
     }
     for vuln in vulnerabilities:
         sev = vuln.get("severity", "low").lower()
-        summary["severity_counts"][sev] = summary["severity_counts"].get(sev, 0) + 1
+        if sev not in summary["severity_counts"]:
+            summary["severity_counts"][sev] = 0
+        summary["severity_counts"][sev] += 1
 
         cats = vuln.get("categories", [])
         for cat in cats:
-            summary["categories"][cat] = summary["categories"].get(cat, 0) + 1
+            if cat not in summary["categories"]:
+                summary["categories"][cat] = 0
+            summary["categories"][cat] += 1
     return summary
 
 def create_severity_pie_chart(severity_counts):
@@ -43,8 +48,12 @@ def create_category_bar_chart(categories):
     return fig.to_html(full_html=False)
 
 def main(args):
+    # Fix: Use absolute path to templates folder
+    base_dir = pathlib.Path(__file__).parent.parent.resolve()
+    templates_dir = base_dir / "templates"
+
     env = Environment(
-        loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "../templates")),
+        loader=FileSystemLoader(str(templates_dir)),
         autoescape=select_autoescape(['html', 'xml'])
     )
 
@@ -63,7 +72,6 @@ def main(args):
         category_chart=category_chart
     )
 
-    # Ensure output directory exists
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
 
     with open(args.output, 'w') as f:
