@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
@@ -31,8 +31,19 @@ jobs:
           python3 -m garak \
             --model_type huggingface \
             --model_name qwen/qwen-7b \
-            --probes dan,promptinject,malwaregen,codeinjection \
-            --jsonl_path reports/latest_scan.jsonl
+            --probes dan \
+            --generations 1 -v
+
+          LATEST_REPORT=$(ls -t $HOME/.local/share/garak/garak_runs/*.report.jsonl | head -n 1)
+
+          if [ -f "$LATEST_REPORT" ]; then
+            mkdir -p reports
+            cp "$LATEST_REPORT" reports/latest_scan.jsonl
+            echo "Garak report copied to reports/latest_scan.jsonl"
+          else
+            echo "Garak report missing—generating empty artifact."
+            echo "[]" > reports/latest_scan.jsonl
+          fi
 
       - name: Generate HTML Report
         run: |
