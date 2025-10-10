@@ -38,7 +38,7 @@ jobs:
             || echo "Garak scan step had a nonzero exit code, continuing to report collection."
 
       - name: Upload Garak JSONL and HTML Reports as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: garak-reports
           path: |
