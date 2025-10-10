@@ -33,7 +33,7 @@ jobs:
           python3 -m garak \
             --model_type huggingface \
             --model_name Qwen/Qwen3-0.6B \
-            --probes goodside.WhoIsRiley \
+            --probes promptinject,leakreplay,packagehallucination,exploitation,donotanswer,tap,latentinjection,snowball,misleading,continuation \
             --generations 1 -v \
             --report_prefix garak-run \
             || echo "Garak scan step had a nonzero exit code, continuing to report collection."
