@@ -12,6 +12,7 @@ jobs:
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_HUB_ENABLE_REMOTE_CODE: "1"
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
       - name: Checkout repo
@@ -25,9 +26,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install jinja2 plotly garak
+          pip install garak google-generativeai
 
-      - name: Run Garak LLM Scan with Qwen3-0.6B
+      - name: Run Garak LLM Scan with OWASP Top 10 Probes
         run: |
           python3 -m garak \
             --model_type huggingface \
@@ -38,9 +39,25 @@ jobs:
             || echo "Garak scan step had a nonzero exit code, continuing to report collection."
 
       - name: Upload Garak JSONL and HTML Reports as Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: garak-reports
           path: |
             ~/.local/share/garak/garak_runs/*.report.jsonl
             ~/.local/share/garak/garak_runs/*.report.html
+
+      - name: Generate Gemini AI Summary
+        run: |
+          LATEST_REPORT=$(ls -t ~/.local/share/garak/garak_runs/*.report.jsonl | head -n 1)
+          python scripts/gemini_summary.py "$LATEST_REPORT" > job-summary.md || echo "Failed to generate AI summary"
+
+      - name: Add Job Summary to GitHub Actions
+        if: success() || failure()
+        run: |
+          echo "## 🛡️ Garak LLM Vulnerability Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f job-summary.md ]; then
+            cat job-summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ AI summary generation failed. Please check artifacts for detailed reports." >> $GITHUB_STEP_SUMMARY
+          fi
