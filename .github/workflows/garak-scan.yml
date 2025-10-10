@@ -24,20 +24,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install jinja2 plotly
+          pip install jinja2 plotly garak
 
-      - name: Install Garak
+      - name: Run Garak LLM Scan with Quwen
         run: |
-          python -m pip install garak
-
-      - name: Run Garak LLM Scan
-        run: |
-          garak \
-          --rest.name Mistral-7B-Nemo \
-          --rest.uri https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1 \
-          --rest.headers Authorization=Bearer $HF_TOKEN \
-          --probes dan,promptinject,malwaregen,codeinjection \
-          --jsonl-path reports/latest_scan.jsonl
+          python3 -m garak \
+            --model_type huggingface \
+            --model_name qwen/qwen-7b \
+            --probes dan,promptinject,malwaregen,codeinjection \
+            --jsonl_path reports/latest_scan.jsonl
 
       - name: Generate HTML Report
         run: |
