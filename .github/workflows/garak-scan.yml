@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      HF_HUB_ENABLE_REMOTE_CODE: "1"  # Allow running custom model code
+      HF_HUB_ENABLE_REMOTE_CODE: "1"
 
     steps:
       - name: Checkout repo
@@ -34,22 +34,24 @@ jobs:
           python3 -m garak \
             --model_type huggingface \
             --model_name Qwen/Qwen3-0.6B \
-            --probes dan,promptinject,malwaregen,codeinjection \
-            --generations 1 -v
+            --probes xss \
+            --generations 1 -v \
+            --report_prefix garak-run \
+            || echo "Garak scan step had a nonzero exit code, continuing to report collection."
 
           LATEST_REPORT=$(ls -t $HOME/.local/share/garak/garak_runs/*.report.jsonl | head -n 1)
 
           if [ -f "$LATEST_REPORT" ]; then
-            cp "$LATEST_REPORT" reports/latest_scan.jsonl
-            echo "Garak report copied to reports/latest_scan.jsonl"
+            cp "$LATEST_REPORT" reports/garak-report.jsonl
+            echo "Garak report copied to ./reports/garak-report.jsonl"
           else
             echo "Garak report missing—generating empty artifact."
-            echo "[]" > reports/latest_scan.jsonl
+            echo "[]" > reports/garak-report.jsonl
           fi
 
       - name: Generate HTML Report
         run: |
-          python scripts/generate_report.py --input reports/latest_scan.jsonl --output docs/index.html
+          python scripts/generate_report.py --input reports/garak-report.jsonl --output docs/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

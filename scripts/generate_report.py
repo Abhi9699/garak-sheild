@@ -1,15 +1,14 @@
 import argparse
 import json
+import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import plotly.graph_objects as go
-import os
 
 def parse_garak_jsonl(path):
     vulnerabilities = []
     with open(path, 'r') as file:
         for line in file:
-            data = json.loads(line)
-            vulnerabilities.append(data)
+            vulnerabilities.append(json.loads(line))
     return vulnerabilities
 
 def summarize_vulnerabilities(vulnerabilities):
@@ -32,7 +31,7 @@ def create_severity_pie_chart(severity_counts):
     values = [severity_counts[label] for label in labels]
 
     fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.4)])
-    fig.update_traces(marker=dict(colors=['#4caf50','#2196f3','#ff9800','#f44336']))
+    fig.update_traces(marker=dict(colors=['#4caf50', '#2196f3', '#ff9800', '#f44336']))
     return fig.to_html(full_html=False)
 
 def create_category_bar_chart(categories):
@@ -45,7 +44,7 @@ def create_category_bar_chart(categories):
 
 def main(args):
     env = Environment(
-        loader=FileSystemLoader(searchpath=os.path.join(os.path.dirname(__file__), "../templates")),
+        loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), "../templates")),
         autoescape=select_autoescape(['html', 'xml'])
     )
 
@@ -63,6 +62,9 @@ def main(args):
         severity_chart=severity_chart,
         category_chart=category_chart
     )
+
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(args.output), exist_ok=True)
 
     with open(args.output, 'w') as f:
         f.write(rendered_html)
