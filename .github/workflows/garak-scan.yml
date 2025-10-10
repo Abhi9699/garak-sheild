@@ -1,0 +1,50 @@
+name: LLM Vulnerability Scan and Report
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  scan_and_report:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jinja2 plotly
+
+      - name: Install Garak
+        run: |
+          python -m pip install garak
+
+      - name: Run Garak LLM Scan
+        run: |
+          garak \
+          --rest.name Mistral-7B-Nemo \
+          --rest.uri https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1 \
+          --rest.headers Authorization=Bearer $HF_TOKEN \
+          --probes dan,promptinject,malwaregen,codeinjection \
+          --jsonl-path reports/latest_scan.jsonl
+
+      - name: Generate HTML Report
+        run: |
+          python scripts/generate_report.py --input reports/latest_scan.jsonl --output docs/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
