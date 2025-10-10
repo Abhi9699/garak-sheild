@@ -29,8 +29,6 @@ jobs:
 
       - name: Run Garak LLM Scan with Qwen3-0.6B
         run: |
-          mkdir -p reports
-
           python3 -m garak \
             --model_type huggingface \
             --model_name Qwen/Qwen3-0.6B \
@@ -39,22 +37,10 @@ jobs:
             --report_prefix garak-run \
             || echo "Garak scan step had a nonzero exit code, continuing to report collection."
 
-          LATEST_REPORT=$(ls -t $HOME/.local/share/garak/garak_runs/*.report.jsonl | head -n 1)
-
-          if [ -f "$LATEST_REPORT" ]; then
-            cp "$LATEST_REPORT" reports/garak-report.jsonl
-            echo "Garak report copied to ./reports/garak-report.jsonl"
-          else
-            echo "Garak report missing—generating empty artifact."
-            echo "[]" > reports/garak-report.jsonl
-          fi
-
-      - name: Generate HTML Report
-        run: |
-          python scripts/generate_report.py --input reports/garak-report.jsonl --output docs/index.html
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload Garak JSONL and HTML Reports as Artifact
+        uses: actions/upload-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          name: garak-reports
+          path: |
+            ~/.local/share/garak/garak_runs/*.report.jsonl
+            ~/.local/share/garak/garak_runs/*.report.html
